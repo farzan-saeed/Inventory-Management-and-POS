@@ -1,6 +1,6 @@
 # Smart Inventory and Sales Management System
 
-> **University Information System Project — Component-Separated Submission**
+> **Information System Project — Component-Separated Submission**
 
 For the full architectural documentation, university requirements mapping, and supervisor evaluation guide, please refer to the master documentation:
 
