@@ -15,20 +15,24 @@ export const formatCurrency = (amount) => {
   }).format(Number(amount));
 };
 
+// Safely parses Firestore Timestamp, { seconds }, ISO string, or Date to a JS Date object
+export const parseDate = (timestamp) => {
+  if (!timestamp) return null;
+  if (timestamp instanceof Date) return isNaN(timestamp.getTime()) ? null : timestamp;
+  if (timestamp.toDate && typeof timestamp.toDate === 'function') {
+    return timestamp.toDate();
+  }
+  if (timestamp.seconds !== undefined) {
+    return new Date(timestamp.seconds * 1000);
+  }
+  const d = new Date(timestamp);
+  return isNaN(d.getTime()) ? null : d;
+};
+
 // Formats Firestore timestamp or ISO date string
 export const formatDate = (timestamp) => {
-  if (!timestamp) return '—';
-  
-  let date;
-  if (timestamp.toDate && typeof timestamp.toDate === 'function') {
-    date = timestamp.toDate();
-  } else if (timestamp.seconds) {
-    date = new Date(timestamp.seconds * 1000);
-  } else {
-    date = new Date(timestamp);
-  }
-
-  if (isNaN(date.getTime())) return '—';
+  const date = parseDate(timestamp);
+  if (!date) return '—';
 
   return new Intl.DateTimeFormat('en-US', {
     year: 'numeric',
@@ -39,18 +43,8 @@ export const formatDate = (timestamp) => {
 
 // Formats Firestore timestamp with time
 export const formatDateTime = (timestamp) => {
-  if (!timestamp) return '—';
-  
-  let date;
-  if (timestamp.toDate && typeof timestamp.toDate === 'function') {
-    date = timestamp.toDate();
-  } else if (timestamp.seconds) {
-    date = new Date(timestamp.seconds * 1000);
-  } else {
-    date = new Date(timestamp);
-  }
-
-  if (isNaN(date.getTime())) return '—';
+  const date = parseDate(timestamp);
+  if (!date) return '—';
 
   return new Intl.DateTimeFormat('en-US', {
     year: 'numeric',

@@ -51,7 +51,7 @@ export const StatCard = ({
       <div className="flex items-center justify-between">
         <span className="text-sm font-medium text-slate-500">{title}</span>
         <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${scheme.bg} ${scheme.text} border ${scheme.border}`}>
-          {Icon && <Icon className="w-5 h-5" />}
+          {Icon && <Icon className="w-5 h-5" strokeWidth={1.75} />}
         </div>
       </div>
 
@@ -63,7 +63,7 @@ export const StatCard = ({
         <div className="mt-3 flex items-center text-xs font-medium">
           {trend && (
             <span
-              className={`inline-flex items-center gap-0.5 mr-2 px-1.5 py-0.5 rounded ${
+              className={`inline-flex items-center gap-0.5 mr-2 px-1.5 py-0.5 rounded-md ${
                 trendType === 'up'
                   ? 'bg-emerald-50 text-emerald-700'
                   : trendType === 'down'
@@ -71,12 +71,12 @@ export const StatCard = ({
                   : 'bg-slate-100 text-slate-600'
               }`}
             >
-              {trendType === 'up' && <ArrowUpRight className="w-3.5 h-3.5" />}
-              {trendType === 'down' && <ArrowDownRight className="w-3.5 h-3.5" />}
+              {trendType === 'up' && <ArrowUpRight className="w-3.5 h-3.5" strokeWidth={2} />}
+              {trendType === 'down' && <ArrowDownRight className="w-3.5 h-3.5" strokeWidth={2} />}
               {trend}
             </span>
           )}
-          {subtitle && <span className="text-slate-500">{subtitle}</span>}
+          {subtitle && <span className="text-slate-500 font-normal">{subtitle}</span>}
         </div>
       )}
     </div>

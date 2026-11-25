@@ -79,6 +79,14 @@ By centralizing critical workflows (e.g. stock deduction upon sales) on the back
 
 ---
 
+### 4. `manualStockOut` / `recordStockOut` (Phase 3: FR3, FR8)
+- **Type:** HTTPS Callable Function (`functions.https.onCall`)
+- **Security Check:** Queries `users` collection; caller must have role `Admin` or `Inventory Staff`. Rejects `Sales Staff` with `permission-denied`.
+- **Validation:** Enforces positive integer deduction quantity and checks that `quantity <= product.quantity` (rejection with `resource-exhausted` if balance insufficient).
+- **Functionality:** Atomically deducts product stock in Firestore and inserts an immutable `stock_out` record into `stockMovements` with reason notes, disposal reference ID, and operator identity.
+
+---
+
 ## 5. Shared Database Connectivity
 Cloud Functions access the exact same Cloud Firestore database defined in `03-Database`:
 - Uses the `firebase-admin` default database connection:

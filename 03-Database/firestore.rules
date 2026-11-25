@@ -2,17 +2,21 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     
-    // Helper function to check if user is authenticated
+    // ========================================================================
+    // Authentication & Role Helper Functions
+    // ========================================================================
+
+    // Check if user is authenticated via Firebase Auth
     function isAuthenticated() {
       return request.auth != null;
     }
 
-    // Helper to get user profile document
+    // Retrieve user document from the 'users' collection
     function getUserData() {
       return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
     }
 
-    // Role check helpers
+    // Role check: Administrator (full access)
     function isAdmin() {
       return isAuthenticated() && (
         request.auth.token.role == 'Admin' ||
@@ -20,6 +24,7 @@ service cloud.firestore {
       );
     }
 
+    // Role check: Inventory Staff (product catalog, restocking, adjustments)
     function isInventoryStaff() {
       return isAuthenticated() && (
         request.auth.token.role == 'Inventory Staff' ||
@@ -28,6 +33,7 @@ service cloud.firestore {
       );
     }
 
+    // Role check: Sales Staff (POS terminal checkout)
     function isSalesStaff() {
       return isAuthenticated() && (
         request.auth.token.role == 'Sales Staff' ||
@@ -36,39 +42,64 @@ service cloud.firestore {
       );
     }
 
-    // Users Collection
+    // ========================================================================
+    // Collection Security Rules
+    // ========================================================================
+
+    // 1. Users Collection
+    // - Authenticated users can read user profiles.
+    // - Self-registration cannot grant the 'Admin' role; only existing Admins can create Admins.
+    // - Users CANNOT modify their own roles or elevate permissions. Only Admins can update/delete.
     match /users/{userId} {
       allow read: if isAuthenticated();
-      allow create: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
+      allow create: if isAuthenticated() && (
+        (request.auth.uid == userId && (!('role' in request.resource.data) || request.resource.data.role != 'Admin')) ||
+        isAdmin()
+      );
       allow update, delete: if isAdmin();
     }
 
-    // Products Collection
+    // 2. Products Collection
+    // - All authenticated users can read catalogue items.
+    // - Only Inventory Staff or Admin can create or update products (for restocking, adjustments).
+    // - Sales Staff CANNOT directly modify product documents or quantities.
+    // - Deletion is restricted to Admins.
     match /products/{productId} {
       allow read: if isAuthenticated();
       allow create, update: if isInventoryStaff();
       allow delete: if isAdmin();
     }
 
-    // Suppliers Collection
+    // 3. Suppliers Collection
+    // - All authenticated users can view suppliers.
+    // - Inventory Staff or Admin can create, update, and delete supplier records.
     match /suppliers/{supplierId} {
       allow read: if isAuthenticated();
-      allow create, update: if isInventoryStaff();
-      allow delete: if isAdmin();
+      allow create, update, delete: if isInventoryStaff();
     }
 
-    // Sales Collection
+    // 4. Sales Collection
+    // - Authenticated users can read sales history and receipts.
+    // - DIRECT CLIENT MUTATIONS ARE STRICTLY FORBIDDEN:
+    //   Clients CANNOT create, update, or delete sales records directly.
+    //   All sales must be processed via the 'processSale' Callable Cloud Function
+    //   which uses the Firebase Admin SDK (bypassing rules with server-side validation).
     match /sales/{saleId} {
       allow read: if isAuthenticated();
-      allow create: if isSalesStaff();
-      allow update, delete: if isAdmin();
+      allow create, update, delete: if false;
     }
 
-    // Stock Movements Collection
+    // 5. Stock Movements Collection
+    // - Authenticated users can view movement audit records.
+    // - Clients CANNOT create 'stock_out' records (handled only by Cloud Functions during sales).
+    // - Inventory Staff can record legitimate 'stock_in' receipts and 'adjustment' audits.
+    // - Existing movement records are strictly immutable (no updates or deletes permitted).
     match /stockMovements/{movementId} {
       allow read: if isAuthenticated();
-      allow create: if isInventoryStaff() || isSalesStaff();
-      allow update, delete: if false; // Immutable audit log
+      allow create: if isInventoryStaff() && 
+        request.resource.data.type in ['stock_in', 'adjustment'] && 
+        request.resource.data.type != 'stock_out';
+      allow update, delete: if false;
     }
   }
 }

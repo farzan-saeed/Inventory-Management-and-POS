@@ -7,7 +7,6 @@ import {
   ShoppingCart, 
   Truck, 
   BarChart3, 
-  ShieldCheck, 
   Layers, 
   X 
 } from 'lucide-react';
@@ -23,7 +22,7 @@ const navItems = [
 ];
 
 export const Sidebar = ({ isOpen, onClose }) => {
-  const { userProfile, role, switchDemoRole } = useAuth();
+  const { userProfile, role } = useAuth();
 
   const getRoleBadgeColor = () => {
     switch (role) {
@@ -57,27 +56,27 @@ export const Sidebar = ({ isOpen, onClose }) => {
         {/* Brand header */}
         <div className="flex items-center justify-between h-16 px-5 border-b border-slate-800">
           <div className="flex items-center gap-3">
-            <div className="flex items-center justify-center w-9 h-9 rounded-lg bg-blue-600 text-white font-bold shadow-lg shadow-blue-500/20">
-              <Layers className="w-5 h-5" />
+            <div className="flex items-center justify-center w-9 h-9 rounded-lg bg-blue-600 text-white font-bold shadow-sm shadow-blue-500/20">
+              <Layers className="w-5 h-5" strokeWidth={2} />
             </div>
             <div>
               <h1 className="text-sm font-bold text-white tracking-tight">SmartInventory</h1>
-              <p className="text-[11px] font-medium text-slate-400">Retail Store System</p>
+              <p className="text-xs text-slate-400">Retail Store System</p>
             </div>
           </div>
           <button
             onClick={onClose}
             className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 lg:hidden"
           >
-            <X className="w-5 h-5" />
+            <X className="w-5 h-5" strokeWidth={2} />
           </button>
         </div>
 
         {/* User Role Tag */}
         <div className="px-5 py-3 border-b border-slate-800/80 bg-slate-900/60">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-medium uppercase tracking-wider text-slate-400">Current Role</span>
-            <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full border ${getRoleBadgeColor()}`}>
+            <span className="text-xs font-medium text-slate-400">Current Role</span>
+            <span className={`text-xs font-medium px-2 py-0.5 rounded-md border ${getRoleBadgeColor()}`}>
               {role}
             </span>
           </div>
@@ -100,59 +99,16 @@ export const Sidebar = ({ isOpen, onClose }) => {
                   }`
                 }
               >
-                <Icon className="w-4 h-4 flex-shrink-0" />
+                <Icon className="w-4 h-4 flex-shrink-0" strokeWidth={1.75} />
                 <span>{item.name}</span>
               </NavLink>
             );
           })}
         </nav>
 
-        {/* Quick Role Switcher for Supervisor Demonstration */}
-        <div className="p-4 mx-3 mb-4 rounded-xl bg-slate-950 border border-slate-800">
-          <div className="flex items-center gap-2 mb-2 text-xs font-semibold text-slate-300">
-            <ShieldCheck className="w-4 h-4 text-blue-400" />
-            <span>Supervisor Role Switch</span>
-          </div>
-          <p className="text-[11px] text-slate-400 mb-2">
-            Test role permissions without re-authenticating:
-          </p>
-          <div className="grid grid-cols-3 gap-1">
-            <button
-              onClick={() => switchDemoRole('Admin')}
-              className={`px-1.5 py-1 text-[10px] font-semibold rounded border transition-colors ${
-                role === 'Admin'
-                  ? 'bg-blue-600 text-white border-blue-500'
-                  : 'bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-700'
-              }`}
-            >
-              Admin
-            </button>
-            <button
-              onClick={() => switchDemoRole('Inventory Staff')}
-              className={`px-1.5 py-1 text-[10px] font-semibold rounded border transition-colors ${
-                role === 'Inventory Staff'
-                  ? 'bg-blue-600 text-white border-blue-500'
-                  : 'bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-700'
-              }`}
-            >
-              Inventory
-            </button>
-            <button
-              onClick={() => switchDemoRole('Sales Staff')}
-              className={`px-1.5 py-1 text-[10px] font-semibold rounded border transition-colors ${
-                role === 'Sales Staff'
-                  ? 'bg-blue-600 text-white border-blue-500'
-                  : 'bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-700'
-              }`}
-            >
-              Sales
-            </button>
-          </div>
-        </div>
-
         {/* System Version & Credits Footer */}
-        <div className="px-5 py-3 border-t border-slate-800 text-[11px] text-slate-400 flex items-center justify-between">
-          <span>Academic System v1.0</span>
+        <div className="px-5 py-3 border-t border-slate-800 text-xs text-slate-400 flex items-center justify-between">
+          <span>SmartInventory v1.0</span>
           <span className="inline-block w-2 h-2 rounded-full bg-emerald-500" title="System Online" />
         </div>
       </aside>

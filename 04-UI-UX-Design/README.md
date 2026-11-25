@@ -6,7 +6,17 @@ An editable Figma project has been created and populated directly in your Figma 
 👉 **[Open Live Figma Project](https://www.figma.com/design/Dxv7fmAgxJC6tUkwXU2eNR)**  
 - **File Key:** `Dxv7fmAgxJC6tUkwXU2eNR`
 - **Owner Account:** Hamdan Zulfiqar's team (`hamdanzulfiqar440@gmail.com`)
-- **Canvas Status:** Populated with 9 editable vector artboard frames (Cover, Design System, Login, Dashboard, Products, Inventory, Suppliers, Sales POS, Reports).
+- **Canvas Status:** Synchronized with the production frontend across 10 editable vector artboards:
+  1. `00. Landing Page` — Minimal SaaS landing page with custom warehouse illustration, feature matrix, and CTAs.
+  2. `01. Project Cover & Architecture` — Project title, architecture blueprint, and screen index.
+  3. `02. Design System & Tokens` — Color tokens, typography, badges, inputs, and components.
+  4. `03. Sign In & Saved Accounts` — Authentication screen with "Back to Home", "Create Account", and device-saved accounts for 1-click sign-in (academic prototype tags and hardcoded demo logins eliminated).
+  5. `04. Dashboard & Operations Console` — Executive dashboard featuring the top "Save login credentials on this device?" banner, clean navbar without simulated demo mode pills, and sidebar without security-bypassing role switchers.
+  6. `05. Products Management` — Product catalog data table, category filters, and SKU safeguards.
+  7. `06. Inventory & Stock Operations` — Stock-in receipts, manual stock-out deductions, and movement history.
+  8. `07. Supplier Directory` — Supplier contacts and deletion protection safeguards.
+  9. `08. Point of Sale & Checkout` — POS cart, barcode entry, receipt modal, and atomic stock deductions.
+  10. `09. Reports & Analytics` — Filterable sales/stock reports, KPIs, and CSV data export.
 
 ---
 

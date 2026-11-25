@@ -11,8 +11,9 @@ import {
   limit, 
   runTransaction 
 } from 'firebase/firestore';
-import { db, isDemoConfig } from '../firebase/firebaseConfig';
-import { getProducts, updateProduct } from './productService';
+import { httpsCallable } from 'firebase/functions';
+import { db, functions, isDemoConfig } from '../firebase/firebaseConfig.js';
+import { getProducts, updateProduct } from './productService.js';
 
 const LOCAL_STORAGE_MOVEMENTS_KEY = 'smart_inventory_stock_movements';
 
@@ -245,6 +246,124 @@ export const adjustStock = async ({
   localStorage.setItem(LOCAL_STORAGE_MOVEMENTS_KEY, JSON.stringify(movements));
 
   return { success: true, previousQuantity, newQuantity: targetQty, productName: targetProduct.name, diff };
+};
+
+/**
+ * Record manual stock deduction (Stock-Out) for write-offs, damages, or shrinkage.
+ * 
+ * Secure flow:
+ * In live mode, this invokes the server-side Firebase Callable Cloud Function 'manualStockOut'.
+ * The backend verifies authentication and user roles ('Admin' or 'Inventory Staff'), validates
+ * positive integer quantities and sufficiency, and executes an atomic Firestore transaction that
+ * deducts inventory and appends an immutable 'stock_out' movement audit log.
+ * 
+ * In offline/demo mode, validates and performs atomic localStorage deduction and audit logging.
+ */
+export const recordStockOut = async ({
+  productId,
+  quantity,
+  reason = 'Damaged / Expired Goods',
+  referenceId = '',
+  userId = 'Inventory Staff',
+}) => {
+  const qtyToRemove = parseInt(quantity, 10);
+  if (isNaN(qtyToRemove) || qtyToRemove <= 0) {
+    throw new Error('Stock-out quantity must be a positive integer.');
+  }
+
+  // 1. Production / Live Firebase Path: Callable Cloud Function
+  if (functions && !isDemoConfig) {
+    try {
+      const stockOutCallable = httpsCallable(functions, 'manualStockOut');
+      const response = await stockOutCallable({
+        productId,
+        quantity: qtyToRemove,
+        reason: reason.trim(),
+        referenceId: referenceId.trim() || undefined,
+      });
+
+      const data = response.data;
+
+      // Sync local movements cache
+      try {
+        const movements = await getStockMovements(100);
+        const newMovement = {
+          id: data.movementId || ('mov-' + Date.now()),
+          productId,
+          productName: data.productName,
+          type: 'stock_out',
+          quantity: qtyToRemove,
+          previousQuantity: data.previousQuantity,
+          newQuantity: data.newQuantity,
+          referenceId: data.referenceId,
+          notes: data.notes || reason.trim(),
+          userId: data.userId || userId,
+          createdAt: new Date().toISOString(),
+        };
+        localStorage.setItem(LOCAL_STORAGE_MOVEMENTS_KEY, JSON.stringify([newMovement, ...movements]));
+      } catch (cacheErr) {
+        console.warn("Local movement cache sync warning:", cacheErr);
+      }
+
+      return {
+        success: true,
+        productId,
+        productName: data.productName,
+        previousQuantity: data.previousQuantity,
+        newQuantity: data.newQuantity,
+        deducted: qtyToRemove,
+        referenceId: data.referenceId,
+      };
+    } catch (error) {
+      console.error("Firebase Cloud Function manualStockOut error:", error);
+      throw new Error(error.message || 'Failed to process manual stock-out on server.');
+    }
+  }
+
+  // 2. Offline Simulated Demo Mode (Local Cache)
+  const products = await getProducts(true);
+  const targetProduct = products.find(p => p.id === productId);
+  if (!targetProduct) {
+    throw new Error('Product not found.');
+  }
+
+  const previousQuantity = Number(targetProduct.quantity) || 0;
+  if (qtyToRemove > previousQuantity) {
+    throw new Error(`Cannot remove ${qtyToRemove} units. Only ${previousQuantity} units available in stock.`);
+  }
+
+  const newQuantity = previousQuantity - qtyToRemove;
+  await updateProduct(productId, { quantity: newQuantity });
+
+  // Record movement in local audit log
+  const movements = await getStockMovements(100);
+  const finalRefId = referenceId.trim() || ('SO-' + Math.floor(100000 + Math.random() * 900000));
+  const newMovement = {
+    id: 'mov-' + Date.now(),
+    productId,
+    productName: targetProduct.name,
+    type: 'stock_out',
+    quantity: qtyToRemove,
+    previousQuantity,
+    newQuantity,
+    referenceId: finalRefId,
+    notes: reason.trim() || 'Manual stock deduction',
+    userId,
+    createdAt: new Date().toISOString(),
+  };
+
+  movements.unshift(newMovement);
+  localStorage.setItem(LOCAL_STORAGE_MOVEMENTS_KEY, JSON.stringify(movements));
+
+  return {
+    success: true,
+    productId,
+    productName: targetProduct.name,
+    previousQuantity,
+    newQuantity,
+    deducted: qtyToRemove,
+    referenceId: finalRefId,
+  };
 };
 
 /**

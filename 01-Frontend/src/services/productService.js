@@ -10,8 +10,8 @@ import {
   orderBy,
   runTransaction
 } from 'firebase/firestore';
-import { db, isDemoConfig } from '../firebase/firebaseConfig';
-import { generateSKU } from '../utils/formatters';
+import { db, isDemoConfig } from '../firebase/firebaseConfig.js';
+import { generateSKU } from '../utils/formatters.js';
 
 const LOCAL_STORAGE_PRODUCTS_KEY = 'smart_inventory_products';
 
@@ -168,6 +168,57 @@ export const getProductById = async (id) => {
 };
 
 /**
+ * Check whether a SKU is already assigned to another product.
+ * 
+ * Requirements:
+ * - Trims whitespace and normalizes case-insensitively (UPPERCASE).
+ * - During product creation (excludeProductId = null), returns true if any product has the same normalized SKU.
+ * - During product editing, allows the product to retain its own existing SKU.
+ * - Rejects if another product (different ID) has the same normalized SKU.
+ * 
+ * Note: This is an application-level duplicate prevention query appropriate for
+ * academic and retail systems (not a concurrency-proof database constraint).
+ * 
+ * @param {string} sku - The SKU to validate
+ * @param {string|null} excludeProductId - Product ID being edited (if any)
+ * @returns {Promise<boolean>} True if the SKU is a duplicate
+ */
+export const isSkuDuplicate = async (sku, excludeProductId = null) => {
+  if (!sku || typeof sku !== 'string') return false;
+  const normalized = sku.trim().toUpperCase();
+  if (!normalized) return false;
+
+  // 1. Check against Firestore when live database is active
+  try {
+    if (db && !isDemoConfig) {
+      const q = query(collection(db, 'products'));
+      const snapshot = await getDocs(q);
+      const isTaken = snapshot.docs.some(docSnap => {
+        if (excludeProductId && docSnap.id === excludeProductId) {
+          return false;
+        }
+        const data = docSnap.data();
+        const existingSku = data.sku ? String(data.sku).trim().toUpperCase() : '';
+        return existingSku === normalized;
+      });
+      if (isTaken) return true;
+    }
+  } catch (error) {
+    console.warn("Firestore isSkuDuplicate query fallback to local cache:", error.message);
+  }
+
+  // 2. Check against local / cached products
+  const products = await getProducts(true);
+  return products.some(p => {
+    if (excludeProductId && p.id === excludeProductId) {
+      return false;
+    }
+    const existingSku = p.sku ? String(p.sku).trim().toUpperCase() : '';
+    return existingSku === normalized;
+  });
+};
+
+/**
  * Add a new product to Firestore
  */
 export const addProduct = async (productData, userId = 'system') => {
@@ -176,6 +227,12 @@ export const addProduct = async (productData, userId = 'system') => {
   const quantity = parseInt(productData.quantity, 10) || 0;
   const reorderLevel = parseInt(productData.reorderLevel, 10) || 0;
   const sku = productData.sku ? productData.sku.trim().toUpperCase() : generateSKU(productData.category);
+
+  // Application-level duplicate SKU check
+  const duplicate = await isSkuDuplicate(sku);
+  if (duplicate) {
+    throw new Error("This SKU already exists. Please use a unique SKU.");
+  }
 
   const newProduct = {
     name: productData.name.trim(),
@@ -266,6 +323,18 @@ export const addProduct = async (productData, userId = 'system') => {
  * Update product information
  */
 export const updateProduct = async (id, updates) => {
+  if (!id) throw new Error("Product ID is required for update.");
+
+  // If SKU is being modified, validate uniqueness against other products
+  if (updates.sku !== undefined) {
+    const normalizedSku = updates.sku.trim().toUpperCase();
+    const duplicate = await isSkuDuplicate(normalizedSku, id);
+    if (duplicate) {
+      throw new Error("This SKU already exists. Please use a unique SKU.");
+    }
+    updates.sku = normalizedSku;
+  }
+
   const sanitized = {
     ...updates,
     updatedAt: serverTimestamp(),

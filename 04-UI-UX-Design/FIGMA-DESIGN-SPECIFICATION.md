@@ -1,6 +1,6 @@
 # Figma UI/UX Design Specification & Re-creation Blueprint
 **Project:** Smart Inventory and Sales Management System  
-**Academic Target:** University Information System Project — Retail Store Edition  
+**Application Target:** Modern Retail Store Edition (Frontend, Backend, Database)  
 **Canvas Standard:** Desktop 1440 × 900 px (Responsive 8pt Grid)  
 **Live Editable Figma File:** [https://www.figma.com/design/Dxv7fmAgxJC6tUkwXU2eNR](https://www.figma.com/design/Dxv7fmAgxJC6tUkwXU2eNR)  
 **Deliverable File:** `04-UI-UX-Design/FIGMA-DESIGN-SPECIFICATION.md`  
@@ -17,8 +17,9 @@
    - [Component Library Specifications](#25-component-library-specifications)
 3. [Low-Fidelity Wireframes (Structural Schematics)](#3-low-fidelity-wireframes-structural-schematics)
 4. [High-Fidelity Screen-by-Screen Design Specifications](#4-high-fidelity-screen-by-screen-design-specifications)
-   - [Screen 1: Login & Role Selection](#screen-1-login--role-selection-1440x900)
-   - [Screen 2: Executive Dashboard](#screen-2-executive-dashboard-1440x900)
+   - [Screen 0: Minimal Public Landing Page (1440x960)](#screen-0-minimal-public-landing-page-1440x960)
+   - [Screen 1: Authentication & Saved Accounts (1440x900)](#screen-1-login--saved-accounts-1440x900)
+   - [Screen 2: Executive Dashboard & Operations Console (1440x960)](#screen-2-executive-dashboard-1440x900)
    - [Screen 3: Product Management (with Add/Edit Modal)](#screen-3-product-management-1440x900)
    - [Screen 4: Inventory Operations (with Stock-In & Adjustment Modals)](#screen-4-inventory-operations-1440x900)
    - [Screen 5: Supplier Management (with Add Supplier Modal)](#screen-5-supplier-management-1440x900)

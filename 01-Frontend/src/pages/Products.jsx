@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Download, Sparkles, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Plus, Download, CheckCircle2, AlertCircle } from 'lucide-react';
 import ProductTable from '../components/ProductTable';
 import ProductForm from '../components/ProductForm';
 import LoadingSpinner from '../components/LoadingSpinner';
@@ -123,16 +123,16 @@ export const Products = () => {
     <div className="space-y-6">
       {/* Toast Feedback Notification */}
       {notification && (
-        <div className={`p-4 rounded-xl border shadow-md flex items-center justify-between text-xs font-semibold ${
+        <div className={`p-3.5 rounded-lg border shadow-sm flex items-center justify-between text-xs font-medium ${
           notification.type === 'error'
             ? 'bg-rose-50 border-rose-200 text-rose-700'
             : 'bg-emerald-50 border-emerald-200 text-emerald-800'
         }`}>
           <div className="flex items-center gap-2">
             {notification.type === 'error' ? (
-              <AlertCircle className="w-4 h-4 flex-shrink-0" />
+              <AlertCircle className="w-4 h-4 flex-shrink-0" strokeWidth={1.75} />
             ) : (
-              <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" strokeWidth={1.75} />
             )}
             <span>{notification.message}</span>
           </div>
@@ -148,7 +148,7 @@ export const Products = () => {
       {/* Header & Main Actions */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900">
+          <h1 className="text-xl font-semibold tracking-tight text-slate-900">
             Product Catalogue Management
           </h1>
           <p className="text-xs sm:text-sm text-slate-500">
@@ -159,9 +159,9 @@ export const Products = () => {
         {isInventoryStaff && (
           <button
             onClick={handleAddClick}
-            className="px-4 py-2 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-sm transition-colors flex items-center gap-2 self-start sm:self-auto"
+            className="px-4 py-2 text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-sm transition-colors flex items-center gap-2 self-start sm:self-auto"
           >
-            <Plus className="w-4 h-4" />
+            <Plus className="w-4 h-4" strokeWidth={1.75} />
             <span>Create New Product</span>
           </button>
         )}
@@ -193,17 +193,17 @@ export const Products = () => {
       {/* Quick Restock Modal */}
       {quickStockProduct && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm">
-          <div className="w-full max-w-md bg-white rounded-2xl shadow-xl border border-slate-200 p-6">
-            <h3 className="text-base font-bold text-slate-900 mb-1">
+          <div className="w-full max-w-md bg-white rounded-xl shadow-lg border border-slate-200/80 p-6">
+            <h3 className="text-base font-semibold text-slate-900 mb-1">
               Quick Restock: {quickStockProduct.name}
             </h3>
-            <p className="text-xs text-slate-500 mb-4 font-mono">
-              Current Stock: <span className="font-bold text-slate-800">{quickStockProduct.quantity} units</span> (Min: {quickStockProduct.reorderLevel})
+            <p className="text-xs text-slate-500 mb-4">
+              Current Stock: <span className="font-medium font-mono text-slate-800">{quickStockProduct.quantity} units</span> (Min: {quickStockProduct.reorderLevel})
             </p>
 
             <form onSubmit={handleQuickRestockSubmit} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                <label className="block text-xs font-medium text-slate-700 mb-1">
                   Quantity to Add (Stock-In)
                 </label>
                 <input
@@ -217,7 +217,7 @@ export const Products = () => {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                <label className="block text-xs font-medium text-slate-700 mb-1">
                   Purchase Order / Reference ID
                 </label>
                 <input
@@ -239,7 +239,7 @@ export const Products = () => {
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-sm"
+                  className="px-4 py-2 text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-sm"
                 >
                   Confirm Restock
                 </button>

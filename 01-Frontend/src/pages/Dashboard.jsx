@@ -4,7 +4,7 @@ import {
   Package, 
   Truck, 
   ShoppingCart, 
-  AlertTriangle, 
+  AlertCircle, 
   Plus, 
   TrendingUp, 
   ArrowUpRight, 
@@ -29,7 +29,7 @@ import { getProducts } from '../services/productService';
 import { getSuppliers } from '../services/supplierService';
 import { getSales } from '../services/salesService';
 import { getLowStockProducts, getStockMovements } from '../services/inventoryService';
-import { formatCurrency, formatDateTime, getStockStatus } from '../utils/formatters';
+import { formatCurrency, formatDateTime, getStockStatus, parseDate } from '../utils/formatters';
 
 export const Dashboard = () => {
   const [loading, setLoading] = useState(true);
@@ -49,7 +49,7 @@ export const Dashboard = () => {
         const [prodList, supList, saleList, lowList, movList] = await Promise.all([
           getProducts(true),
           getSuppliers(),
-          getSales(10),
+          getSales(250),
           getLowStockProducts(),
           getStockMovements(8),
         ]);
@@ -79,16 +79,64 @@ export const Dashboard = () => {
   const totalSalesRevenue = sales.reduce((acc, s) => acc + (Number(s.totalAmount) || 0), 0);
   const lowStockCount = lowStockItems.length;
 
-  // Chart data preparation: 7-day sales trend
-  const chartData = [
-    { day: 'Mon', revenue: 145.50, orders: 4 },
-    { day: 'Tue', revenue: 289.00, orders: 7 },
-    { day: 'Wed', revenue: 195.20, orders: 5 },
-    { day: 'Thu', revenue: 412.80, orders: 11 },
-    { day: 'Fri', revenue: 530.00, orders: 14 },
-    { day: 'Sat', revenue: 680.50, orders: 18 },
-    { day: 'Sun (Today)', revenue: totalSalesRevenue > 0 ? totalSalesRevenue : 320.00, orders: sales.length || 6 },
-  ];
+  // Dynamic weekly sales trend calculated from actual sales records (Phase 3)
+  const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const today = new Date();
+  const currentDayOfWeek = today.getDay(); // 0 = Sun, 1 = Mon, ..., 6 = Sat
+  const distanceToMonday = (currentDayOfWeek + 6) % 7; // days since Monday
+  
+  const monday = new Date(today);
+  monday.setDate(today.getDate() - distanceToMonday);
+  monday.setHours(0, 0, 0, 0);
+
+  // Initialize all 7 days of the current week (Monday through Sunday) with meaningful zero values
+  const weekDays = [];
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(monday);
+    d.setDate(monday.getDate() + i);
+    const dayLabel = dayNames[d.getDay()];
+    const isToday = d.toDateString() === today.toDateString();
+    
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const dayNum = String(d.getDate()).padStart(2, '0');
+    const localDateStr = `${y}-${m}-${dayNum}`;
+
+    weekDays.push({
+      dateStr: localDateStr,
+      day: isToday ? `${dayLabel} (Today)` : dayLabel,
+      revenue: 0,
+      orders: 0,
+    });
+  }
+
+  // Aggregate real transaction data into matching calendar day buckets
+  if (Array.isArray(sales)) {
+    sales.forEach((sale) => {
+      if (!sale.createdAt) return;
+      const saleDate = parseDate(sale.createdAt);
+      if (!saleDate) return;
+
+      const y = saleDate.getFullYear();
+      const m = String(saleDate.getMonth() + 1).padStart(2, '0');
+      const dayNum = String(saleDate.getDate()).padStart(2, '0');
+      const saleDateStr = `${y}-${m}-${dayNum}`;
+
+      const targetDay = weekDays.find((wd) => wd.dateStr === saleDateStr);
+      if (targetDay) {
+        targetDay.revenue = Math.round((targetDay.revenue + (Number(sale.totalAmount) || 0)) * 100) / 100;
+        targetDay.orders += 1;
+      }
+    });
+  }
+
+  const chartData = weekDays.map(({ day, revenue, orders }) => ({
+    day,
+    revenue,
+    orders,
+  }));
+
+  const currentWeekRevenue = chartData.reduce((acc, d) => acc + d.revenue, 0);
 
   return (
     <div className="space-y-6">
@@ -107,9 +155,9 @@ export const Dashboard = () => {
           {isInventoryStaff && (
             <button
               onClick={() => navigate('/products')}
-              className="px-3.5 py-2 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-sm transition-colors flex items-center gap-1.5"
+              className="px-3.5 py-2 text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-sm transition-colors flex items-center gap-1.5"
             >
-              <Plus className="w-4 h-4" />
+              <Plus className="w-4 h-4" strokeWidth={2} />
               <span>Add Product</span>
             </button>
           )}
@@ -117,9 +165,9 @@ export const Dashboard = () => {
           {isSalesStaff && (
             <button
               onClick={() => navigate('/sales')}
-              className="px-3.5 py-2 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 border border-slate-200 rounded-lg shadow-sm transition-colors flex items-center gap-1.5"
+              className="px-3.5 py-2 text-xs font-medium text-slate-700 bg-white hover:bg-slate-50 border border-slate-200 rounded-lg shadow-sm transition-colors flex items-center gap-1.5"
             >
-              <ShoppingCart className="w-4 h-4 text-emerald-600" />
+              <ShoppingCart className="w-4 h-4 text-emerald-600" strokeWidth={1.75} />
               <span>Point of Sale</span>
             </button>
           )}
@@ -127,9 +175,9 @@ export const Dashboard = () => {
           {isInventoryStaff && (
             <button
               onClick={() => navigate('/inventory')}
-              className="px-3.5 py-2 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 border border-slate-200 rounded-lg shadow-sm transition-colors flex items-center gap-1.5"
+              className="px-3.5 py-2 text-xs font-medium text-slate-700 bg-white hover:bg-slate-50 border border-slate-200 rounded-lg shadow-sm transition-colors flex items-center gap-1.5"
             >
-              <Boxes className="w-4 h-4 text-blue-600" />
+              <Boxes className="w-4 h-4 text-blue-600" strokeWidth={1.75} />
               <span>Stock Adjustment</span>
             </button>
           )}
@@ -172,7 +220,7 @@ export const Dashboard = () => {
         <StatCard
           title="Low Stock Items"
           value={lowStockCount}
-          icon={AlertTriangle}
+          icon={AlertCircle}
           colorScheme={lowStockCount > 0 ? "rose" : "emerald"}
           subtitle={lowStockCount > 0 ? "Require replenishment" : "Stock healthy"}
           onClick={() => navigate('/inventory')}
@@ -185,11 +233,15 @@ export const Dashboard = () => {
         <div className="lg:col-span-2 bg-white rounded-xl border border-slate-200/80 p-5 shadow-sm">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h2 className="text-sm font-bold text-slate-800">Sales & Revenue Trend</h2>
-              <p className="text-xs text-slate-400">Weekly sales distribution and counter volume</p>
+              <h2 className="text-sm font-semibold text-slate-800">Sales & Revenue Trend</h2>
+              <p className="text-xs text-slate-500 mt-0.5">
+                {currentWeekRevenue > 0 
+                  ? `Current week total: ${formatCurrency(currentWeekRevenue)} across active sales`
+                  : 'Current week sales distribution (Meaningful zeros on non-trading days)'}
+              </p>
             </div>
-            <span className="text-xs font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
-              Active Store Volume
+            <span className="text-xs font-medium text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-md border border-emerald-200/70">
+              {sales.length > 0 ? `${sales.length} Total Sales Recorded` : 'No Sales Yet'}
             </span>
           </div>
 
@@ -226,10 +278,10 @@ export const Dashboard = () => {
         <div className="bg-white rounded-xl border border-slate-200/80 p-5 shadow-sm flex flex-col">
           <div className="flex items-center justify-between mb-3 pb-2 border-b border-slate-100">
             <div className="flex items-center gap-2">
-              <AlertTriangle className="w-4 h-4 text-amber-500" />
-              <h2 className="text-sm font-bold text-slate-800">Reorder Watchlist</h2>
+              <AlertCircle className="w-4 h-4 text-amber-500" strokeWidth={1.75} />
+              <h2 className="text-sm font-semibold text-slate-800">Reorder Watchlist</h2>
             </div>
-            <span className="text-xs font-mono font-bold text-slate-500">
+            <span className="text-xs font-mono font-medium text-slate-500">
               {lowStockItems.length} items
             </span>
           </div>
@@ -237,9 +289,9 @@ export const Dashboard = () => {
           <div className="flex-1 overflow-y-auto space-y-3">
             {lowStockItems.length === 0 ? (
               <div className="h-44 flex flex-col items-center justify-center text-center text-slate-400">
-                <CheckCircle2 className="w-8 h-8 text-emerald-500 mb-1" />
+                <CheckCircle2 className="w-8 h-8 text-emerald-500 mb-1" strokeWidth={1.75} />
                 <p className="text-xs font-semibold text-slate-700">All Stock Levels Optimal</p>
-                <p className="text-[11px] text-slate-400">No items currently below reorder threshold.</p>
+                <p className="text-xs text-slate-400">No items currently below reorder threshold.</p>
               </div>
             ) : (
               lowStockItems.slice(0, 5).map((item) => (
@@ -249,19 +301,19 @@ export const Dashboard = () => {
                 >
                   <div className="min-w-0 pr-2">
                     <p className="text-xs font-semibold text-slate-800 truncate">{item.name}</p>
-                    <p className="text-[11px] font-mono text-slate-500">
-                      SKU: {item.sku} • Min: {item.reorderLevel}
+                    <p className="text-xs text-slate-500">
+                      SKU: <span className="font-mono">{item.sku}</span> • Min: {item.reorderLevel}
                     </p>
                   </div>
                   <div className="text-right flex-shrink-0">
-                    <span className="text-xs font-bold font-mono text-rose-600 block">
+                    <span className="text-xs font-medium font-mono text-rose-600 block">
                       {item.quantity} left
                     </span>
                     <button
                       onClick={() => navigate('/inventory')}
-                      className="text-[10px] font-semibold text-blue-600 hover:underline"
+                      className="text-xs font-medium text-blue-600 hover:text-blue-700"
                     >
-                      Restock →
+                      Restock
                     </button>
                   </div>
                 </div>
@@ -272,9 +324,9 @@ export const Dashboard = () => {
           <div className="pt-3 border-t border-slate-100 mt-3 text-center">
             <button
               onClick={() => navigate('/inventory')}
-              className="text-xs font-semibold text-blue-600 hover:text-blue-700 hover:underline"
+              className="text-xs font-medium text-blue-600 hover:text-blue-700"
             >
-              Open Full Inventory Manager →
+              Open Inventory Manager
             </button>
           </div>
         </div>
@@ -286,12 +338,12 @@ export const Dashboard = () => {
         <div className="bg-white rounded-xl border border-slate-200/80 p-5 shadow-sm">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
-              <ShoppingCart className="w-4 h-4 text-blue-600" />
-              <h2 className="text-sm font-bold text-slate-800">Recent Customer Sales</h2>
+              <ShoppingCart className="w-4 h-4 text-blue-600" strokeWidth={1.75} />
+              <h2 className="text-sm font-semibold text-slate-800">Recent Customer Sales</h2>
             </div>
             <button
               onClick={() => navigate('/sales')}
-              className="text-xs font-semibold text-blue-600 hover:underline"
+              className="text-xs font-medium text-blue-600 hover:text-blue-700"
             >
               View All Sales
             </button>
@@ -304,16 +356,16 @@ export const Dashboard = () => {
               sales.slice(0, 4).map((sale) => (
                 <div key={sale.id || sale.saleId} className="py-2.5 flex items-center justify-between">
                   <div>
-                    <p className="font-semibold text-slate-800 font-mono">{sale.saleId}</p>
-                    <p className="text-slate-500 text-[11px]">
+                    <p className="font-medium text-slate-800 font-mono">{sale.saleId}</p>
+                    <p className="text-slate-500 text-xs">
                       {sale.items?.length || 1} line item(s) • Sold by {sale.soldBy || 'Staff'}
                     </p>
                   </div>
                   <div className="text-right">
-                    <p className="font-bold text-slate-900 font-mono">
+                    <p className="font-semibold text-slate-900 font-mono">
                       {formatCurrency(sale.totalAmount)}
                     </p>
-                    <p className="text-[10px] text-slate-400">
+                    <p className="text-xs text-slate-400">
                       {formatDateTime(sale.createdAt)}
                     </p>
                   </div>
@@ -327,12 +379,12 @@ export const Dashboard = () => {
         <div className="bg-white rounded-xl border border-slate-200/80 p-5 shadow-sm">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
-              <Clock className="w-4 h-4 text-blue-600" />
-              <h2 className="text-sm font-bold text-slate-800">Recent Stock Movements (Audit Trail)</h2>
+              <Clock className="w-4 h-4 text-blue-600" strokeWidth={1.75} />
+              <h2 className="text-sm font-semibold text-slate-800">Recent Stock Movements (Audit Trail)</h2>
             </div>
             <button
               onClick={() => navigate('/inventory')}
-              className="text-xs font-semibold text-blue-600 hover:underline"
+              className="text-xs font-medium text-blue-600 hover:text-blue-700"
             >
               Audit Log
             </button>
@@ -349,13 +401,13 @@ export const Dashboard = () => {
                 return (
                   <div key={mov.id} className="py-2.5 flex items-center justify-between">
                     <div>
-                      <p className="font-semibold text-slate-800">{mov.productName}</p>
-                      <p className="text-slate-500 text-[11px]">
+                      <p className="font-medium text-slate-800">{mov.productName}</p>
+                      <p className="text-slate-500 text-xs">
                         Ref: <span className="font-mono">{mov.referenceId || 'N/A'}</span> • {mov.notes || mov.type}
                       </p>
                     </div>
                     <div className="text-right">
-                      <span className={`inline-block font-mono font-bold px-2 py-0.5 rounded text-[11px] ${
+                      <span className={`inline-block font-mono font-medium px-2 py-0.5 rounded-md text-xs ${
                         isPositive 
                           ? 'bg-emerald-50 text-emerald-700' 
                           : isOut 
@@ -364,7 +416,7 @@ export const Dashboard = () => {
                       }`}>
                         {isPositive ? `+${mov.quantity}` : mov.quantity}
                       </span>
-                      <p className="text-[10px] text-slate-400 mt-0.5">
+                      <p className="text-xs text-slate-400 mt-0.5">
                         {formatDateTime(mov.createdAt)}
                       </p>
                     </div>

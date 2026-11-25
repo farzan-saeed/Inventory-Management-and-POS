@@ -8,8 +8,17 @@
     "build:frontend": "npm --prefix 01-Frontend run build",
     "preview:frontend": "npm --prefix 01-Frontend run preview",
     "build:backend": "npm --prefix 02-Backend run build",
+    "test:backend": "npm --prefix 02-Backend test",
+    "test:phase2": "node test-phase2.mjs",
+    "test:phase3": "node test-phase3.mjs",
+    "test:phase4": "node test-phase4.mjs",
+    "test:auth": "node test-auth-persistence.mjs",
+    "test:saved-accounts": "node test-saved-accounts.mjs && node test-registration-banner-flow.mjs",
+    "test:landing": "node test-landing-browser.mjs",
+    "test:responsive": "node test-responsive.mjs",
+    "test:all": "npm run test:backend && npm run test:phase2 && npm run test:phase3 && npm run test:phase4 && npm run test:auth && npm run test:saved-accounts",
     "seed:database": "node 03-Database/scripts/seedDatabase.js",
-    "build:all": "npm run build:frontend"
+    "build:all": "npm run build:backend && npm run build:frontend"
   },
   "keywords": [
     "inventory-management",

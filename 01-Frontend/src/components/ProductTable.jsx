@@ -1,14 +1,9 @@
 import React, { useState } from 'react';
 import { 
   Search, 
-  Filter, 
   Edit2, 
   Power, 
   PlusCircle, 
-  SlidersHorizontal, 
-  CheckCircle2, 
-  AlertTriangle, 
-  XCircle,
   Package
 } from 'lucide-react';
 import { formatCurrency, getStockStatus } from '../utils/formatters';
@@ -105,7 +100,7 @@ export const ProductTable = ({
       {/* Table Container */}
       <div className="overflow-x-auto">
         <table className="w-full text-left text-xs">
-          <thead className="bg-slate-50 text-slate-600 font-semibold uppercase tracking-wider text-[11px] border-b border-slate-200">
+          <thead className="bg-slate-50 text-slate-600 font-medium text-xs border-b border-slate-200">
             <tr>
               <th className="px-4 py-3">Product / SKU</th>
               <th className="px-4 py-3">Category</th>
@@ -122,9 +117,9 @@ export const ProductTable = ({
             {filtered.length === 0 ? (
               <tr>
                 <td colSpan={canManage ? 9 : 8} className="px-4 py-8 text-center text-slate-500">
-                  <Package className="w-8 h-8 mx-auto mb-2 text-slate-300" />
+                  <Package className="w-8 h-8 mx-auto mb-2 text-slate-300" strokeWidth={1.75} />
                   <p className="font-medium text-slate-600">No matching products found</p>
-                  <p className="text-slate-400 text-[11px] mt-0.5">Try adjusting your search or filters.</p>
+                  <p className="text-slate-400 text-xs mt-0.5">Try adjusting your search or filters.</p>
                 </td>
               </tr>
             ) : (
@@ -142,14 +137,14 @@ export const ProductTable = ({
                     {/* Name & SKU */}
                     <td className="px-4 py-3 font-medium text-slate-900">
                       <div className="flex flex-col">
-                        <span className="font-semibold text-slate-800">{product.name}</span>
-                        <span className="text-[11px] font-mono text-slate-400">{product.sku}</span>
+                        <span className="font-medium text-slate-800">{product.name}</span>
+                        <span className="text-xs font-mono text-slate-400">{product.sku}</span>
                       </div>
                     </td>
 
                     {/* Category */}
                     <td className="px-4 py-3">
-                      <span className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 font-medium text-[11px]">
+                      <span className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 font-medium text-xs">
                         {product.category || 'General'}
                       </span>
                     </td>
@@ -160,13 +155,13 @@ export const ProductTable = ({
                     </td>
 
                     {/* Selling Price */}
-                    <td className="px-4 py-3 text-right font-semibold text-slate-900 font-mono">
+                    <td className="px-4 py-3 text-right font-medium text-slate-900 font-mono">
                       {formatCurrency(product.sellingPrice)}
                     </td>
 
                     {/* Available Quantity */}
                     <td className="px-4 py-3 text-center">
-                      <span className={`font-bold font-mono text-sm ${
+                      <span className={`font-medium font-mono text-sm ${
                         product.quantity <= 0 
                           ? 'text-rose-600' 
                           : product.quantity <= product.reorderLevel 
@@ -175,14 +170,14 @@ export const ProductTable = ({
                       }`}>
                         {product.quantity}
                       </span>
-                      <span className="text-[10px] text-slate-400 block">
+                      <span className="text-xs text-slate-400 block">
                         Min: {product.reorderLevel}
                       </span>
                     </td>
 
                     {/* Stock Status Pill */}
                     <td className="px-4 py-3">
-                      <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-semibold border ${stock.bgClass}`}>
+                      <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-xs font-medium border ${stock.bgClass}`}>
                         <span className={`w-1.5 h-1.5 rounded-full ${stock.dotClass}`} />
                         {stock.label}
                       </span>
@@ -198,11 +193,11 @@ export const ProductTable = ({
                     {/* Active Status Badge */}
                     <td className="px-4 py-3 text-center">
                       {product.isActive !== false ? (
-                        <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                        <span className="px-2 py-0.5 rounded-md text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
                           Active
                         </span>
                       ) : (
-                        <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-slate-100 text-slate-500 border border-slate-200">
+                        <span className="px-2 py-0.5 rounded-md text-xs font-medium bg-slate-100 text-slate-500 border border-slate-200">
                           Deactivated
                         </span>
                       )}
@@ -219,7 +214,7 @@ export const ProductTable = ({
                               title="Restock / Adjust Quantity"
                               className="p-1 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
                             >
-                              <PlusCircle className="w-4 h-4" />
+                              <PlusCircle className="w-4 h-4" strokeWidth={1.75} />
                             </button>
                           )}
 
@@ -229,7 +224,7 @@ export const ProductTable = ({
                             title="Edit Product"
                             className="p-1 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded transition-colors"
                           >
-                            <Edit2 className="w-3.5 h-3.5" />
+                            <Edit2 className="w-3.5 h-3.5" strokeWidth={1.75} />
                           </button>
 
                           {/* Toggle Active / Deactivate */}
@@ -242,7 +237,7 @@ export const ProductTable = ({
                                 : 'text-slate-400 hover:text-emerald-600 hover:bg-emerald-50'
                             }`}
                           >
-                            <Power className="w-3.5 h-3.5" />
+                            <Power className="w-3.5 h-3.5" strokeWidth={1.75} />
                           </button>
                         </div>
                       </td>
@@ -258,7 +253,7 @@ export const ProductTable = ({
       {/* Table Footer info */}
       <div className="px-4 py-3 bg-slate-50/50 border-t border-slate-100 text-xs text-slate-500 flex items-center justify-between">
         <span>Showing {filtered.length} of {products.length} products</span>
-        <span className="text-[11px] text-slate-400">Database collection: `products`</span>
+        <span className="text-xs text-slate-400">Database collection: `products`</span>
       </div>
     </div>
   );

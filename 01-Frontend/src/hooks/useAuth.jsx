@@ -6,7 +6,7 @@ import {
   registerUser, 
   signOutUser, 
   getCurrentUserProfile,
-  getDemoAccounts 
+  saveAccountCredentials 
 } from '../services/authService';
 
 const AuthContext = createContext(null);
@@ -15,6 +15,16 @@ export const AuthProvider = ({ children }) => {
   const [currentUser, setCurrentUser] = useState(null);
   const [userProfile, setUserProfile] = useState(null);
   const [loading, setLoading] = useState(true);
+
+  // Pending account credentials queued to ask user to save on this device
+  const [pendingSaveAccount, setPendingSaveAccount] = useState(() => {
+    try {
+      const raw = sessionStorage.getItem('smart_inventory_pending_save_account');
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      return null;
+    }
+  });
 
   useEffect(() => {
     // Check initial cached user (useful for instant load and demo accounts)
@@ -73,12 +83,42 @@ export const AuthProvider = ({ children }) => {
     setLoading(true);
     try {
       const { user, profile } = await registerUser(email, password, name, role);
+      const pending = {
+        uid: profile?.uid || user?.uid || 'user-' + Date.now(),
+        name: (name || '').trim() || profile?.name || user?.displayName || email.split('@')[0],
+        email: email.trim().toLowerCase(),
+        role: role || profile?.role || 'Sales Staff',
+        password: password,
+      };
+      try {
+        sessionStorage.setItem('smart_inventory_pending_save_account', JSON.stringify(pending));
+      } catch (e) {
+        console.error("Failed to store pending account in sessionStorage", e);
+      }
+      setPendingSaveAccount(pending);
       setCurrentUser(user);
       setUserProfile(profile);
       return { user, profile };
     } finally {
       setLoading(false);
     }
+  };
+
+  const savePendingAccount = () => {
+    if (pendingSaveAccount) {
+      saveAccountCredentials(pendingSaveAccount);
+      try {
+        sessionStorage.removeItem('smart_inventory_pending_save_account');
+      } catch (e) {}
+      setPendingSaveAccount(null);
+    }
+  };
+
+  const dismissPendingAccount = () => {
+    try {
+      sessionStorage.removeItem('smart_inventory_pending_save_account');
+    } catch (e) {}
+    setPendingSaveAccount(null);
   };
 
   const logout = async () => {
@@ -90,14 +130,6 @@ export const AuthProvider = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  };
-
-  const switchDemoRole = (roleName) => {
-    const demos = getDemoAccounts();
-    const target = demos.find(d => d.role === roleName) || demos[0];
-    localStorage.setItem('smart_inventory_user_profile', JSON.stringify(target));
-    setUserProfile(target);
-    setCurrentUser({ uid: target.uid, email: target.email, displayName: target.name });
   };
 
   const role = userProfile?.role || 'Guest';
@@ -116,7 +148,9 @@ export const AuthProvider = ({ children }) => {
     login,
     register,
     logout,
-    switchDemoRole,
+    pendingSaveAccount,
+    savePendingAccount,
+    dismissPendingAccount,
   };
 
   return (

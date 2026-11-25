@@ -70,17 +70,19 @@ match /products/{productId} {
   allow delete: if isAdmin();
 }
 
-// Sales: readable by staff; creation restricted to Sales Staff; no updates allowed
+// Sales: readable by staff; DIRECT CLIENT WRITES STRICTLY FORBIDDEN
+// All sales must be processed via 'processSale' Callable Cloud Function using Firebase Admin SDK
 match /sales/{saleId} {
   allow read: if isAuthenticated();
-  allow create: if isSalesStaff();
-  allow update, delete: if isAdmin();
+  allow create, update, delete: if false;
 }
 
-// Stock Movements: immutable audit trail
+// Stock Movements: immutable audit trail; direct client creation of 'stock_out' is forbidden
 match /stockMovements/{movementId} {
   allow read: if isAuthenticated();
-  allow create: if isInventoryStaff() || isSalesStaff();
+  allow create: if isInventoryStaff() && 
+    request.resource.data.type in ['stock_in', 'adjustment'] && 
+    request.resource.data.type != 'stock_out';
   allow update, delete: if false; // Immutable log
 }
 ```
